@@ -14,7 +14,7 @@ uv run python tools/build.py <name> && uv run python tools/check.py <name> && uv
 uv run python tools/check.py assembly --bodies 2     # expected body count other than 1
 ```
 
-After changing a model, run the loop for it and for every model that imports it (`plate` is imported by `bracket`, and both are imported by `assembly`). Then view `out/<name>.png` and compare it with the intended design.
+After changing a model, run the loop for it and for every model that imports it (`plate` is imported by `bracket`, and both are imported by `assembly`; `stool_seat`, `stool_leg` and `stool_stretcher` are imported by `stool`, which is imported by `stool_print`). Then view `out/<name>.png` and compare it with the intended design.
 
 Success criteria: watertight = True, bodies = the intended count (default 1), bbox matches the expected size. `check.py` exits non-zero on failure.
 
