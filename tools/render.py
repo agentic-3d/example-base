@@ -1,4 +1,7 @@
-"""Usage: uv run python tools/render.py <model>  ->  out/<model>.png"""
+"""Usage: uv run python tools/render.py <model>  ->  out/<model>.png
+
+Base-owned: edit in agentic-3d/example-base, then `make sync-base`.
+"""
 import sys
 
 import matplotlib

@@ -119,7 +119,7 @@ with BuildPart() as p:
 - `Location(Plane(origin=o, x_dir=x, z_dir=z)) * part` maps the part's local X, Y, Z onto that plane. Use it to move a part modeled in print orientation into its place in the assembly, or to aim a cutter along a tilted axis.
 - Tilted sockets: subtract a cutter made of `Cylinder` plus `Cone` (bore plus 45 deg countersink) placed with `Location(Plane(...))`. This avoids `chamfer()` on an elliptical mouth edge.
 - `pack(parts, padding, align_z=True)` does not aim at a square bed: it can put everything in one long row. Check the plate bbox against `BED_MAX` and lay the parts out with `Pos` when it does not fit.
-- Fit check between two placed parts: `a.distance_to(b)` is the smallest gap (expect `CLEARANCE` at a joint), and `(a & b).volume` must be 0. `tools/check.py` cannot see an overlap.
+- Fit check between two placed parts: `a.distance_to(b)` is the smallest gap (expect `CLEARANCE` at a joint), and `(a & b).volume` must be 0. `tools/check.py` cannot see an overlap: `tools/overlaps.py <name>` checks every solid pair of a model, and `--near MM` lists the gaps (`tight` below `CLEARANCE`).
 
 ## Export (STL only)
 `tools/build.py <name>` calls `export_stl(result, "out/<name>.stl", tolerance=0.01, angular_tolerance=0.1)`, which writes binary STL. `Mesher` handles 3MF (with metadata) if it is ever needed. The project does not export STEP.

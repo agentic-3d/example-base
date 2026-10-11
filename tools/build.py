@@ -1,5 +1,7 @@
 """Usage: uv run python tools/build.py <model>   (run from the project root)
 
+Base-owned: edit in agentic-3d/example-base, then `make sync-base`.
+
 Imports models/<model>.py and exports its `result` to out/<model>.stl.
 """
 import importlib

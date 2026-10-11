@@ -20,9 +20,10 @@ flowchart TD
     subgraph loop ["make &lt;name&gt; (Python runner scripts)"]
         direction TB
         build["<b>tools/build.py</b><br/>import model, export STL"]
-        check["<b>tools/check.py</b><br/>watertight, body count, bbox"]
+        check["<b>tools/check.py</b><br/>watertight, body count, bbox vs Expect:"]
+        overlaps["<b>tools/overlaps.py</b><br/>overlapping solids (multi-body models)"]
         render["<b>tools/render.py</b><br/>2x2 view grid (iso, top, front, side)"]
-        build --> check --> render
+        build --> check --> overlaps --> render
     end
 
     stl[("out/&lt;name&gt;.stl")]
@@ -46,8 +47,8 @@ Solid arrows are data flow, dashed arrows are feedback to Claude. `models/*` is 
 |---|---|
 | `RULES.md` | Design planning rules for the agent: requirements, orientation, splitting and joints, feature order, FDM rules, plan block, verification |
 | `CLAUDE.md` | Guidance for Claude Code: commands, architecture, gotchas, how the template inheritance works |
-| `Makefile` | Builds, checks and renders every model, and syncs the two files above from this repo |
-| `tools/` | `build.py` (STL export), `check.py` (watertight, body count, bbox), `render.py` (2x2 view grid as PNG) |
+| `Makefile` | Builds, checks and renders every model, and syncs the two files above and `tools/` from this repo |
+| `tools/` | The `make` loop: `build.py` (STL export), `check.py` (watertight, body count, bbox against the `Expect:` line), `overlaps.py` (overlapping solids), `render.py` (2x2 view grid as PNG). On demand: `sections.py`, `printcheck.py`, `diff.py`, `overlay.py` (see Optional checks) |
 | `docs/build123d-notes.md` | Verified build123d API notes and print recipes |
 | `models/` | `common.py` (shared print constants) and the example models |
 
@@ -76,9 +77,9 @@ Solid arrows are data flow, dashed arrows are feedback to Claude. `models/*` is 
 
 | Files | Owner | In a derived project |
 |---|---|---|
-| `CLAUDE.md`, `RULES.md` | base | overwritten by `make sync-base`, never edited locally |
+| `CLAUDE.md`, `RULES.md`, `tools/*.py` | base | overwritten by `make sync-base`, never edited locally |
 | `README.md`, `Makefile`, `models/*` | project | all project-specific facts live here |
-| `tools/`, `docs/`, `models/common.py`, `pyproject.toml` | project | start as copies of base, may diverge, not synced |
+| `docs/`, `models/common.py`, `pyproject.toml` | project | start as copies of base, may diverge, not synced |
 
 To pull the current rules into a derived project:
 
@@ -86,7 +87,7 @@ To pull the current rules into a derived project:
 make sync-base
 ```
 
-It downloads both files from the `main` branch of this repository with `curl`. Review `git diff` before committing. A rule that should change is changed here first, then synced.
+It downloads these files from the `main` branch of this repository with `curl` (`BASE_TOOLS` in the `Makefile` lists the scripts). A project made before the tools were base-owned copies the `BASE_TOOLS` / `BASE_FILES` lines and the `overlaps.py` recipe line from this `Makefile` once. Review `git diff` before committing. A rule that should change is changed here first, then synced.
 
 ## Example models
 
@@ -114,7 +115,8 @@ open out/plate.stl  # preview with macOS Quick Look
 `make <name>` runs the loop for one model:
 
 - `tools/build.py <name>` writes `out/<name>.stl`.
-- `tools/check.py <name> [--bodies N]` verifies the mesh is watertight, has the expected body count (default 1) and prints the bbox. It exits non-zero on failure.
+- `tools/check.py <name> [--bodies N]` verifies the mesh is watertight, has the expected body count (default 1) and prints the bbox. It also compares the bbox with the `Expect:` line of the model header (0.1 mm) and the extents with `BED_MAX` when that line names it. It exits non-zero on failure.
+- `tools/overlaps.py <name>` runs only for models with a `BODIES_` line. It fails when two solids of the result overlap, which `check.py` cannot see.
 - `tools/render.py <name>` writes `out/<name>.png`, a 2x2 view grid (iso, top, front, side) with true-mm axes.
 
 After changing a model, run `make`, so every model that imports it is rebuilt too (`plate` -> `bracket` -> `assembly`). `out/` is committed: commit the regenerated STL and PNG files together with the model.
@@ -127,13 +129,27 @@ models/
   plate.py      one model per file; UPPER_CASE parameters at the top, exposes `result` and `build(...)`
   bracket.py
   assembly.py
-tools/          build, check and render scripts
+tools/          build, check, overlaps, render and the on-demand analysis scripts (base-owned)
 docs/           build123d API notes and print recipes
 out/            generated STL/PNG output (committed, so GitHub shows the results)
 Makefile        model list and targets
 RULES.md        design planning rules (base-owned)
 CLAUDE.md       guidance for Claude Code (base-owned)
 ```
+
+## Optional checks
+
+Run from the project root when the loop is green and the question fits. They are base-owned like the rest of `tools/`, so every derived project has them after `make sync-base`.
+
+| Command | What it answers |
+|---|---|
+| `uv run python tools/overlaps.py <name> --near 1` | Which solid pairs are closer than 1 mm, and is any gap below `CLEARANCE` (`tight`)? |
+| `uv run python tools/sections.py <name> --z 3` | What does the part look like inside at X, Y or Z = value (sockets, pockets, wall thickness)? Writes `out/<name>.<axis><value>.png`, a throwaway file |
+| `uv run python tools/printcheck.py <name>` | How much surface is an overhang above 45 degrees, where is it, how big is the bed contact, does it fit `BED_MAX`? Report only; `--fail-over PCT` turns it into a gate |
+| `uv run python tools/diff.py <name> [--ref REV]` | How did the rebuilt STL change against the committed one (bbox, volume, area, bodies, centroid)? |
+| `uv run python tools/overlay.py <name> <drawing.png> <view> <px/mm x> <px/mm y> <origin x> <origin y> <out.png>` | Does the model match a drawing, scan or photo? Red = silhouette, `--edges MM` adds depth steps in blue |
+
+`overlay.py` takes the drawing scale per axis (drawing pixels per model mm), because scans are often stretched: measure two known dimensions on each axis. `--rotate` deskews, `--crop` and `--zoom` pick the detail, `--shift` moves a part that is modelled in print orientation. The script header lists everything.
 
 ## Adding a model
 
