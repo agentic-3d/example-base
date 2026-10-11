@@ -6,6 +6,40 @@ The template is deliberately minimal. It carries the rules, the tooling and thre
 
 Derived example: [example-stool](https://github.com/agentic-3d/example-stool), a scale-model stool split into glued printed parts.
 
+## How it works
+
+Claude Code writes and edits the model script. The `make` loop (Python runner scripts) builds, checks and renders it, and Claude reads the results and iterates until the part matches the design.
+
+```mermaid
+flowchart LR
+    you(["You: describe the part"]) --> claude
+
+    claude["<b>Claude Code</b><br/>follows RULES.md + CLAUDE.md<br/>reads docs/build123d-notes.md"]
+    model["<b>models/&lt;name&gt;.py</b><br/>build123d model<br/>UPPER_CASE params, build(), result"]
+
+    subgraph loop ["make &lt;name&gt; (Python runner scripts)"]
+        direction TB
+        build["<b>tools/build.py</b><br/>import model, export STL"]
+        check["<b>tools/check.py</b><br/>watertight, body count, bbox"]
+        render["<b>tools/render.py</b><br/>2x2 view grid (iso, top, front, side)"]
+        build --> check --> render
+    end
+
+    stl[("out/&lt;name&gt;.stl")]
+    png[("out/&lt;name&gt;.png")]
+    print(["Quick Look, slicer, 3D print"])
+
+    claude -- "writes / edits" --> model
+    model -- "result" --> build
+    build --> stl
+    render --> png
+    stl --> print
+    check -. "exit code + metrics" .-> claude
+    png -. "Claude views image,<br/>compares with design" .-> claude
+```
+
+Solid arrows are data flow, dashed arrows are feedback to Claude. `models/*` is the only thing Claude edits; `tools/` and `make` are fixed runners.
+
 ## What you get
 
 | File | Purpose |
