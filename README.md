@@ -11,7 +11,7 @@ Derived example: [example-stool](https://github.com/agentic-3d/example-stool), a
 Claude Code writes and edits the model script. The `make` loop (Python runner scripts) builds, checks and renders it, and Claude reads the results and iterates until the part matches the design.
 
 ```mermaid
-flowchart LR
+flowchart TD
     you(["You: describe the part"]) --> claude
 
     claude["<b>Claude Code</b><br/>follows RULES.md + CLAUDE.md<br/>reads docs/build123d-notes.md"]
