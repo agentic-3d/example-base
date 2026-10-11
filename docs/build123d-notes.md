@@ -37,7 +37,7 @@ with BuildPart() as p:                  # result: p.part
 Hole(radius, depth=None, mode=SUBTRACT)                     # RADIUS, not diameter; through-all if depth None
 CounterBoreHole(radius, counter_bore_radius, counter_bore_depth, depth=None)
 CounterSinkHole(radius, counter_sink_radius, depth=None, counter_sink_angle=82, mode)
-pack(objects, padding, align_z=False)                        # print-bed layout
+pack(objects, padding, align_z=False)                        # print-bed layout, see the note on BED_MAX below
 Box(length, width, height, rotation, align=(CENTER,CENTER,CENTER), mode)   # centered by default
 extrude(to_extrude=None, amount, dir, until, target, both=False, taper=0, clean=True, mode)
 fillet(objects, radius)    chamfer(objects, length, length2=None, angle=None, reference=None)
@@ -112,6 +112,14 @@ with BuildPart() as p:
 - Wrap geometry in `build(...)` with the file's constants as defaults, so another model can reuse it with different dimensions: `insert(plate.build(40, 30, 4, hole_d=4))` inside a `BuildPart` (see `models/bracket.py`).
 - Builder mode: `insert(part)` merges an existing part into the current `BuildPart`. Algebra mode: `Pos(x, y, z) * part` places it.
 - Separate bodies: `Compound([a, Pos(0, 0, z) * b])` stays two bodies, so check with `--bodies 2` (see `models/assembly.py`). Parts that share a surface or vertex can fuse into one body in the STL, so leave a gap.
+
+## Placing and checking multi-part models (verified on 0.13.0)
+- `Cylinder(radius, height, arc_size=360, rotation, align, mode)` and `Cone(bottom_radius, top_radius, height, ...)` are centered by default. Use `align=(Align.CENTER, Align.CENTER, Align.MIN)` to grow them from Z = 0.
+- `split(obj, bisect_by=Plane(origin=p, z_dir=n), keep=Keep.TOP)` works in algebra mode and returns the part. `Keep.TOP` is the side the plane normal points to.
+- `Location(Plane(origin=o, x_dir=x, z_dir=z)) * part` maps the part's local X, Y, Z onto that plane. Use it to move a part modeled in print orientation into its place in the assembly, or to aim a cutter along a tilted axis.
+- Tilted sockets: subtract a cutter made of `Cylinder` plus `Cone` (bore plus 45 deg countersink) placed with `Location(Plane(...))`. This avoids `chamfer()` on an elliptical mouth edge.
+- `pack(parts, padding, align_z=True)` does not aim at a square bed: it can put everything in one long row. Check the plate bbox against `BED_MAX` and lay the parts out with `Pos` when it does not fit.
+- Fit check between two placed parts: `a.distance_to(b)` is the smallest gap (expect `CLEARANCE` at a joint), and `(a & b).volume` must be 0. `tools/check.py` cannot see an overlap.
 
 ## Export (STL only)
 `tools/build.py <name>` calls `export_stl(result, "out/<name>.stl", tolerance=0.01, angular_tolerance=0.1)`, which writes binary STL. `Mesher` handles 3MF (with metadata) if it is ever needed. The project does not export STEP.

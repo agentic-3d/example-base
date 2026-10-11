@@ -57,7 +57,7 @@ Not every object prints as one part. Decide the split here, before any geometry.
 - At natural seams: where one member meets another, or at a change of section. Not across a smooth visible surface.
 - So that each piece gains a large flat bed face.
 - So that the joint is loaded in compression or shear, never in peel or tension across the glue line. Do not cut across the main load path.
-- Not through thin walls. Around a socket keep wall >= 2.4 and floor >= 1.6.
+- Not through thin walls. Around a socket keep wall >= `SOCKET_WALL` (2.4) and floor >= `SOCKET_FLOOR` (1.6).
 
 **Default joint: glued peg-in-socket.**
 
@@ -84,7 +84,7 @@ Not every object prints as one part. Decide the split here, before any geometry.
 ## 5. Parameters
 - Every number is a named UPPER_CASE constant at the top of the file.
 - Derived values are expressions, never retyped numbers: `SOCKET_D = PEG_D + 2 * CLEARANCE`.
-- Import `CLEARANCE` and `MIN_WALL` from `models.common`. Do not redefine them.
+- Import the shared print constants from `models.common` (`CLEARANCE`, `MIN_WALL`, `HOLE_COMP`, `BED_CHAMFER`, `BED_MAX`, `GLUE_GAP`, `SOCKET_WALL`, `SOCKET_FLOOR`). Do not redefine them.
 - Dependent models read the other model's constants (`<other>.THICKNESS`), so a change propagates.
 
 ## 6. Feature order
