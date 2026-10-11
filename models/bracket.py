@@ -1,10 +1,8 @@
 # L-bracket, printed base-down (upright rises along Z). Origin: bottom center.
 # The base/wall joint is filleted because a load on the upright pulls across layer lines there.
-# The wall hole is a teardrop (45 deg point up) so it prints without support.
+# The square wall hole bridges only 5 mm (below the 6 mm teardrop threshold), so it prints without support.
 # Expect: bodies=1, bbox 40 x 30 x 29
-from math import cos, radians, sin, sqrt
-
-from build123d import Axis, BuildPart, BuildSketch, Box, Circle, Locations, Mode, Plane, Polygon, chamfer, extrude, fillet, insert
+from build123d import Axis, BuildPart, BuildSketch, Box, Locations, Mode, Plane, Rectangle, chamfer, extrude, fillet, insert
 
 from models import plate
 from models.common import BED_CHAMFER, HOLE_COMP, MIN_WALL
@@ -19,7 +17,7 @@ CORNER_R = 2  # rounding of the two front corners (the wall side stays square)
 JOINT_R = 1.5  # fillet where the upright meets the base
 HOLE_D = 4  # base mounting hole diameter
 HOLE_INSET = 9  # base hole center distance from edges
-WALL_HOLE_D = 6  # hole through the upright wall
+WALL_HOLE = 5  # square hole through the upright wall (side)
 EPS = 0.01  # selector tolerance
 
 assert WALL_T >= MIN_WALL
@@ -27,7 +25,7 @@ assert WALL_T + JOINT_R + MIN_WALL <= HOLE_INSET - (HOLE_D + HOLE_COMP) / 2  # j
 
 wall_y = -BASE_W / 2 + WALL_T / 2
 wall_z = BASE_T + WALL_H / 2
-r_wall = (WALL_HOLE_D + HOLE_COMP) / 2
+wall_hole = WALL_HOLE + HOLE_COMP
 
 with BuildPart() as part:
     # the base flange reuses the plate model with different dimensions and square corners
@@ -39,11 +37,10 @@ with BuildPart() as part:
     joint_y = -BASE_W / 2 + WALL_T
     joint = part.edges().filter_by(Axis.X).filter_by_position(Axis.Y, joint_y - EPS, joint_y + EPS).filter_by_position(Axis.Z, BASE_T - EPS, BASE_T + EPS)
     fillet(joint, JOINT_R)
-    # teardrop: circle plus a 45 deg point on top; sketch plane XZ is offset (along -Y) to the wall center
+    # sketch plane XZ is offset (along -Y) to the wall center
     with BuildSketch(Plane.XZ.offset(-wall_y)):
         with Locations((0, wall_z)):
-            Circle(r_wall)
-            Polygon((r_wall * cos(radians(45)), r_wall * sin(radians(45))), (0, r_wall * sqrt(2)), (-r_wall * cos(radians(45)), r_wall * sin(radians(45))))
+            Rectangle(wall_hole, wall_hole)
     extrude(amount=WALL_T, both=True, mode=Mode.SUBTRACT)
     chamfer((part.faces() << Axis.Z).edges(), BED_CHAMFER)
 

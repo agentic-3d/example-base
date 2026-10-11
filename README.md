@@ -59,7 +59,7 @@ It downloads both files from the `main` branch of this repository with `curl`. R
 | Model | Description | Expected bbox (mm) |
 |---|---|---|
 | `plate` | Mounting plate with four corner holes | 60 x 40 x 10 |
-| `bracket` | L-bracket with filleted joint and teardrop wall hole; reuses `plate` for its base | 40 x 30 x 29 |
+| `bracket` | L-bracket with filleted joint and rectangular wall hole; reuses `plate` for its base | 40 x 30 x 29 |
 | `assembly` | Exploded view of `plate` and `bracket` (2 bodies, gap between them) | 60 x 40 x 44 |
 
 They show the three patterns a project needs: a parametric part with `build(...)`, a part that reuses another one, and a multi-body compound.
