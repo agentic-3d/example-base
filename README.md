@@ -4,7 +4,7 @@ Template repository for agentic parametric CAD: an AI coding agent (Claude Code)
 
 The template is deliberately minimal. It carries the rules, the tooling and three small example models. A real project is created from it and replaces the examples.
 
-Derived example: [example-stool](https://github.com/BCsabaEngine/example-stool), a scale-model stool split into glued printed parts.
+Derived example: [example-stool](https://github.com/agentic-3d/example-stool), a scale-model stool split into glued printed parts.
 
 ## What you get
 
